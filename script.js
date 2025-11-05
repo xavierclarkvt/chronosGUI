@@ -203,7 +203,7 @@ async function editUnitInfo(partUuid) {
   if (unitElem) {
     const currentUnit = unitElem.innerText
       .split(":")[1]
-      .replace(/edit$/, "")
+      .replace(/edit$/, "") // need to remove the edit button text from the input
       .trim();
 
     unitElem.innerHTML = `<b>Unit:</b> <input type="text" id="unit-input-${partUuid}" value="${currentUnit}">`;
@@ -212,12 +212,22 @@ async function editUnitInfo(partUuid) {
     const checkButton = document.createElement("button");
     checkButton.textContent = "✔";
     checkButton.onclick = async () => {
-      const res = await updatePartInfo(partUuid);
-      const editButton = document.createElement("button");
-      editButton.textContent = "edit";
-      editButton.onclick = () => editUnitInfo(partUuid);
-      unitElem.innerHTML = "<b>Unit:</b> " + (res.unit || "") + " ";
-      unitElem.appendChild(editButton);
+      try {
+        const res = await updatePartInfo(partUuid);
+        const editButton = document.createElement("button");
+        editButton.textContent = "edit";
+        editButton.onclick = () => editUnitInfo(partUuid);
+        unitElem.innerHTML = "<b>Unit:</b> " + (res.unit || "") + " ";
+        unitElem.appendChild(editButton);
+      } catch (error) {
+        // tested by disconnecting network and forcing an error
+        alert("Error updating status: " + (error.message || error));
+        const editButton = document.createElement("button");
+        editButton.textContent = "edit";
+        editButton.onclick = () => editUnitInfo(partUuid);
+        unitElem.innerHTML = `<b>Unit:</b> ${currentUnit} `;
+        unitElem.appendChild(editButton);
+      }
     };
 
     // create cancel button
@@ -245,7 +255,7 @@ async function editUnitInfo(partUuid) {
  * @param {String} partUuid the part UUID
  */
 async function editStatusInfo(partUuid) {
-  // update the element with partUuid to have an select box to edit the status info
+  // update the element with partUuid to have a select box to edit the status info
   const statusElem = document.getElementById(`status-${partUuid}`);
   if (statusElem) {
     const currentStatus = statusElem.innerText
@@ -278,12 +288,22 @@ async function editStatusInfo(partUuid) {
     const checkButton = document.createElement("button");
     checkButton.textContent = "✔";
     checkButton.onclick = async () => {
-      const res = await updatePartInfo(partUuid);
-      const editButton = document.createElement("button");
-      editButton.textContent = "edit";
-      editButton.onclick = () => editStatusInfo(partUuid);
-      statusElem.innerHTML = "<b>Status:</b> " + (res.status || "") + " ";
-      statusElem.appendChild(editButton);
+      try {
+        const res = await updatePartInfo(partUuid);
+        const editButton = document.createElement("button");
+        editButton.textContent = "edit";
+        editButton.onclick = () => editStatusInfo(partUuid);
+        statusElem.innerHTML = "<b>Status:</b> " + (res.status || "") + " ";
+        statusElem.appendChild(editButton);
+      } catch (error) {
+        // tested by disconnecting network and forcing an error
+        alert("Error updating status: " + (error.message || error));
+        const editButton = document.createElement("button");
+        editButton.textContent = "edit";
+        editButton.onclick = () => editStatusInfo(partUuid);
+        statusElem.innerHTML = `<b>Status:</b> ${currentStatus} `;
+        statusElem.appendChild(editButton);
+      }
     };
 
     // create cancel button
