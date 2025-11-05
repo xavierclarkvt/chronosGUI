@@ -1,4 +1,5 @@
 let api_key = "";
+
 /**
  * Perform a health check on the api
  * @returns {Promise<Object>} The health check response data
@@ -19,6 +20,12 @@ async function healthCheck() {
   return await response.json();
 }
 
+/**
+ * Fetch configuration data
+ * @param {String} configUuid The configuration UUID
+ * @returns {Promise<Object>} The configuration data as json
+ * @throws {Error} If the fetch fails
+ */
 async function getConfiguration(configUuid) {
   const queryParam =
     configUuid !== "root"
@@ -38,6 +45,12 @@ async function getConfiguration(configUuid) {
   return await response.json();
 }
 
+/**
+ * Fetch part information
+ * @param {String} partUuid The part UUID
+ * @returns {Promise<Object>} The part information as json
+ * @throws {Error} If the fetch fails
+ */
 async function getPartInfo(partUuid) {
   const response = await fetch(
     `https://ssuowapy4e.execute-api.us-east-1.amazonaws.com/prod/api/parts/${partUuid}`,
@@ -53,6 +66,12 @@ async function getPartInfo(partUuid) {
   return await response.json();
 }
 
+/**
+ * Fetch allowed part statuses
+ * @param {String} partUuid The part UUID
+ * @returns {Promise<Object>} The allowed part statuses as json ({ allowableStatuses: [] })
+ * @throws {Error} If the fetch fails
+ */
 async function getAllowedPartStatuses(partUuid) {
   const response = await fetch(
     `https://ssuowapy4e.execute-api.us-east-1.amazonaws.com/prod/api/parts/${partUuid}/allowable-statuses`,
@@ -70,6 +89,12 @@ async function getAllowedPartStatuses(partUuid) {
   return await response.json();
 }
 
+/**
+ * Update part information, getting the values from input fields
+ * @param {String} partUuid the part UUID, used to find the input fields
+ * @returns part info JSON after update
+ * @throws {Error} If the update fails
+ */
 async function updatePartInfo(partUuid) {
   // get updated data from input fields
   const unitInput = document.getElementById(`unit-input-${partUuid}`);
@@ -99,11 +124,16 @@ async function updatePartInfo(partUuid) {
   return await response.json();
 }
 
+/**
+ * List child configurations for a given configuration UUID
+ * Creates buttons for each child configuration to expand further
+ * @param {String} configUuid the configuration UUID
+ */
 async function listChildrenConfigs(configUuid) {
   getConfiguration(configUuid)
     .then(async (data) => {
       if (data.length === 0) {
-        console.error(`No child configurations found for ${configUuid}`);
+        // no child configurations
         return;
       }
 
@@ -134,15 +164,23 @@ async function listChildrenConfigs(configUuid) {
           const partInfo = await getPartInfo(config.partUuid);
 
           const partElement = document.createElement("div");
-          partElement.innerHTML =
-            `<button class="config-selector"id="button-${config.uuid}" ` +
-            `onClick="expandConfig('${config.uuid}', '${encodeURIComponent(
-              JSON.stringify(partInfo)
-            )}')">` +
-            `${partInfo.name} ${
-              config?.endUnitSerialNo ? `(SN: ${config.endUnitSerialNo})` : ""
-            }` +
-            `</button>`;
+          // create the button element
+          const button = document.createElement("button");
+          button.className = "config-selector";
+          button.id = `button-${config.uuid}`;
+          button.textContent = `${partInfo.name} ${
+            config?.endUnitSerialNo ? `(SN: ${config.endUnitSerialNo})` : ""
+          }`;
+
+          // attach the click handler as a function
+          button.addEventListener("click", () => {
+            expandConfig(
+              config.uuid,
+              encodeURIComponent(JSON.stringify(partInfo))
+            );
+          });
+
+          partElement.appendChild(button);
           output.appendChild(partElement);
         } catch (error) {
           console.error("Error fetching part info:", error);
@@ -154,6 +192,11 @@ async function listChildrenConfigs(configUuid) {
     });
 }
 
+/**
+ * Edit the unit info for a part
+ * Changes the display to an input box with submit and cancel buttons
+ * @param {String} partUuid the part UUID
+ */
 async function editUnitInfo(partUuid) {
   // update the element with partUuid to have an input box to edit the unit info
   const unitElem = document.getElementById(`unit-${partUuid}`);
@@ -195,29 +238,41 @@ async function editUnitInfo(partUuid) {
   }
 }
 
+/**
+ * Edit the status info for a part
+ * Changes the display to an select box with submit and cancel buttons
+ * Gets the allowed statuses from the API
+ * @param {String} partUuid the part UUID
+ */
 async function editStatusInfo(partUuid) {
   // update the element with partUuid to have an select box to edit the status info
   const statusElem = document.getElementById(`status-${partUuid}`);
   if (statusElem) {
     const currentStatus = statusElem.innerText
       .split(":")[1]
-      .replace(/edit$/, "")
+      .replace(/edit$/, "") // need to remove the edit button text from the input
       .trim();
 
     const allowedStatuses = await getAllowedPartStatuses(partUuid).then(
       (data) => data.allowableStatuses || []
     );
 
-    statusElem.innerHTML = `<b>Status:</b> <select id="status-input-${partUuid}">
-            ${allowedStatuses
-              .map(
-                (status) =>
-                  `<option value="${status}"${
-                    status === currentStatus ? " selected" : ""
-                  }>${status}</option>`
-              )
-              .join("")}
-            </select>`;
+    // create the select element
+    const select = document.createElement("select");
+    select.id = `status-input-${partUuid}`;
+    allowedStatuses.forEach((status) => {
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = status;
+      if (status === currentStatus) {
+        option.selected = true;
+      }
+      select.appendChild(option);
+    });
+
+    // clear and update the statusElem
+    statusElem.innerHTML = "<b>Status:</b> ";
+    statusElem.appendChild(select);
 
     // create submit button
     const checkButton = document.createElement("button");
@@ -250,6 +305,11 @@ async function editStatusInfo(partUuid) {
 }
 
 // partinfo is JSON
+/**
+ * Expand a configuration to show its part info and child configurations
+ * @param {String} configUuid the configuration UUID
+ * @param {Object} partInfo the part information as JSON, from getPartInfo
+ */
 async function expandConfig(configUuid, partInfo) {
   partInfo = JSON.parse(decodeURIComponent(partInfo));
   try {
@@ -265,29 +325,45 @@ async function expandConfig(configUuid, partInfo) {
         infoDiv.id = `part-info-${configUuid}`;
         infoDiv.className = "part-info";
         infoDiv.innerHTML = `
-                <strong>Part Info:</strong>
-                <ul>
-                <li><b>ID:</b> ${partInfo.uuid || ""}</li>
-                <li><b>Name:</b> ${partInfo.name || ""}</li>
-                <li id="unit-${partInfo.uuid}"><b>Unit:</b> ${
+          <strong>Part Info:</strong>
+          <ul>
+          <li><b>ID:</b> ${partInfo.uuid || ""}</li>
+          <li><b>Name:</b> ${partInfo.name || ""}</li>
+          <li id="unit-${partInfo.uuid}"><b>Unit:</b> ${
           partInfo.unit || ""
-        } <button onClick="editUnitInfo('${partInfo.uuid}')">edit</button></li>
-                <li id="status-${partInfo.uuid}"><b>Status:</b> ${
+        } </li>
+          <li id="status-${partInfo.uuid}"><b>Status:</b> ${
           partInfo.status || ""
-        } <button onClick="editStatusInfo('${
-          partInfo.uuid
-        }')">edit</button></li>
-                ${
-                  partInfo?.version
-                    ? `<li><b>Version:</b> ${partInfo.version || ""}</li>`
-                    : ""
-                }
-                </ul>
-                <div id="${configUuid}"></div>
-              `;
+        } </li>
+          ${
+            partInfo?.version
+              ? `<li><b>Version:</b> ${partInfo.version || ""}</li>`
+              : "" // version is optional
+          }
+          </ul>
+          <div id="${configUuid}"></div>`;
+
+        // add edit button for unit
+        const unitElem = infoDiv.querySelector(`#unit-${partInfo.uuid}`);
+        if (unitElem) {
+          const editUnitButton = document.createElement("button");
+          editUnitButton.textContent = "edit";
+          editUnitButton.onclick = () => editUnitInfo(partInfo.uuid);
+          unitElem.appendChild(editUnitButton);
+        }
+
+        // add edit button for status
+        const statusElem = infoDiv.querySelector(`#status-${partInfo.uuid}`);
+        if (statusElem) {
+          const editStatusButton = document.createElement("button");
+          editStatusButton.textContent = "edit";
+          editStatusButton.onclick = () => editStatusInfo(partInfo.uuid);
+          statusElem.appendChild(editStatusButton);
+        }
 
         listChildrenConfigs(configUuid);
 
+        // append the infoDiv after the "open config" button
         buttonElem.parentNode.appendChild(infoDiv);
       }
     }
