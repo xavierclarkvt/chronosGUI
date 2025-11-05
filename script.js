@@ -176,7 +176,7 @@ async function listChildrenConfigs(configUuid) {
           button.addEventListener("click", () => {
             expandConfig(
               config.uuid,
-              encodeURIComponent(JSON.stringify(partInfo))
+              config.partUuid
             );
           });
 
@@ -328,10 +328,11 @@ async function editStatusInfo(partUuid) {
 /**
  * Expand a configuration to show its part info and child configurations
  * @param {String} configUuid the configuration UUID
- * @param {Object} partInfo the part information as JSON, from getPartInfo
+ * @param {String} partUuid the part UUID
  */
-async function expandConfig(configUuid, partInfo) {
-  partInfo = JSON.parse(decodeURIComponent(partInfo));
+async function expandConfig(configUuid, partUuid) {
+  // fetch part info again to avoid stale data
+  const partInfo = await getPartInfo(partUuid);
   try {
     // display part info in a div beneath the button
     const buttonElem = document.getElementById("button-" + configUuid);
