@@ -11,3 +11,16 @@ header {
   padding: 8px;
   width: 100%;
 }
+
+#root {
+  padding: 16px;
+}
+
+.config-selector::before {
+  content: ">  ";
+}
+/* if a button has a sibling div immediately after, change content to "< " */
+.config-selector:has(+ div)::before,
+.config-selector + div ~ .config-selector::before {
+  content: "<  ";
+}
