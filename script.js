@@ -135,7 +135,7 @@ async function listChildrenConfigs(configUuid) {
 
           const partElement = document.createElement("div");
           partElement.innerHTML =
-            `<button class="config-selector" id="button-${config.uuid}" ` +
+            `<button class="config-selector"id="button-${config.uuid}" ` +
             `onClick="expandConfig('${config.uuid}', '${encodeURIComponent(
               JSON.stringify(partInfo)
             )}')">` +
@@ -263,7 +263,7 @@ async function expandConfig(configUuid, partInfo) {
       } else {
         const infoDiv = document.createElement("div");
         infoDiv.id = `part-info-${configUuid}`;
-        infoDiv.style.marginLeft = "20px";
+        infoDiv.className = "part-info";
         infoDiv.innerHTML = `
                 <strong>Part Info:</strong>
                 <ul>

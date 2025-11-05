@@ -24,3 +24,20 @@ header {
 .config-selector + div ~ .config-selector::before {
   content: "<  ";
 }
+
+button.config-selector {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+div.part-info {
+  margin-left: 14px;
+  padding-left: 6px;
+  margin-bottom: 12px;
+  margin-top: 6px;
+  border-left: 2px solid #ccc;
+}
